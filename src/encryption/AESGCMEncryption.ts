@@ -40,14 +40,23 @@ export class AESGCMEncryption implements IEncryptionAlgorithm {
         // For simplicity, we can combine salt and ciphertext, or return salt separately.
         // Here we return the ciphertext with the IV; the caller must know the salt.
         // In a complete implementation, consider including the salt with the encrypted data.
-        return { data: ciphertext, iv };
+        return { data: ciphertext, iv, salt };
     }
 
-    async decryptText(encryptedData: ArrayBuffer, iv: Uint8Array, password: string): Promise<string> {
+    async decryptText(
+        encryptedData: ArrayBuffer,
+        iv: Uint8Array,
+        salt: Uint8Array,
+        password: string
+    ): Promise<string> {
         // In a full implementation, the salt should be extracted from the encrypted payload.
         // For this example, assume a fixed salt or have it provided externally.
-        const salt = new Uint8Array(this.saltLength); // placeholder: replace with actual salt retrieval
         const key = await deriveKey(password, salt);
+
+        console.log("Decrypting with key:", key);
+        console.log("IV:", iv);
+        console.log("Encrypted data:", encryptedData);
+
         const decrypted = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, encryptedData);
         const decoder = new TextDecoder();
         return decoder.decode(decrypted);
@@ -59,11 +68,15 @@ export class AESGCMEncryption implements IEncryptionAlgorithm {
         const key = await deriveKey(password, salt);
         const iv = crypto.getRandomValues(new Uint8Array(12));
         const ciphertext = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, fileBuffer);
-        return { data: ciphertext, iv };
+        return { data: ciphertext, iv, salt };
     }
 
-    async decryptFile(encryptedBuffer: ArrayBuffer, iv: Uint8Array, password: string): Promise<ArrayBuffer> {
-        const salt = new Uint8Array(this.saltLength); // placeholder: replace with actual salt retrieval
+    async decryptFile(
+        encryptedBuffer: ArrayBuffer,
+        iv: Uint8Array,
+        salt: Uint8Array,
+        password: string
+    ): Promise<ArrayBuffer> {
         const key = await deriveKey(password, salt);
         return await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, encryptedBuffer);
     }

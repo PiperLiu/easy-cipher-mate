@@ -26,11 +26,11 @@ describe("EncryptionService using AESGCMEncryption", () => {
         const decryptedText = await encryptionService.decryptText(
             encryptionResult.data,
             encryptionResult.iv,
+            encryptionResult.salt,
             password
         );
 
         expect(decryptedText).toBe(plaintext);
     });
 
-    // You can add additional tests for file encryption/decryption as needed
 });
