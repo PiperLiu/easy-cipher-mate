@@ -19,14 +19,10 @@ describe("EncryptionService using AESGCMEncryption", () => {
         // Encrypt the plaintext
         const encryptionResult = await encryptionService.encryptText(plaintext, password);
         expect(encryptionResult).toHaveProperty("data");
-        expect(encryptionResult).toHaveProperty("iv");
 
         // Decrypt the ciphertext
-        // In this test example, we assume that the salt is handled internally (or using a fixed salt for test purposes).
         const decryptedText = await encryptionService.decryptText(
             encryptionResult.data,
-            encryptionResult.iv,
-            encryptionResult.salt,
             password
         );
 

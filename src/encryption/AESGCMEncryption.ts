@@ -1,10 +1,34 @@
-import { IEncryptionAlgorithm, EncryptionResult } from "./IEncryptionAlgorithm";
+import { IEncryptionAlgorithm, EncryptionResult } from './IEncryptionAlgorithm';
 
-/**
- * Helper function to derive a CryptoKey from a password.
- */
-async function deriveKey(password: string, salt: Uint8Array): Promise<CryptoKey> {
+interface EncryptionConfig {
+    salt: Uint8Array
+    iv: Uint8Array
+}
+
+const DEFAULT_SALT = new Uint8Array(16)
+DEFAULT_SALT.fill(0)
+const DEFAULT_IV = new Uint8Array(12)
+DEFAULT_IV.fill(0)
+
+export const getEncryptionConfig = (): EncryptionConfig => {
+    const envSalt = process.env.ECM_AESGCM_ENCRYPTION_SALT
+    const envIv = process.env.ECM_ENCRYPTION_IV
+
+    return {
+        salt: envSalt ?
+            new Uint8Array(Buffer.from(envSalt, 'base64')) :
+            DEFAULT_SALT
+        ,
+        iv: envIv ?
+            new Uint8Array(Buffer.from(envIv, 'base64')) :
+            DEFAULT_IV
+    }
+}
+
+async function deriveKey(password: string): Promise<CryptoKey> {
     const encoder = new TextEncoder();
+    const { salt } = getEncryptionConfig();
+
     const keyMaterial = await crypto.subtle.importKey(
         "raw",
         encoder.encode(password),
@@ -12,6 +36,7 @@ async function deriveKey(password: string, salt: Uint8Array): Promise<CryptoKey>
         false,
         ["deriveKey"]
     );
+
     return crypto.subtle.deriveKey(
         {
             name: "PBKDF2",
@@ -27,57 +52,44 @@ async function deriveKey(password: string, salt: Uint8Array): Promise<CryptoKey>
 }
 
 export class AESGCMEncryption implements IEncryptionAlgorithm {
-    private saltLength = 16;
-
     async encryptText(plaintext: string, password: string): Promise<EncryptionResult> {
         const encoder = new TextEncoder();
-        const salt = crypto.getRandomValues(new Uint8Array(this.saltLength));
-        const key = await deriveKey(password, salt);
-        const iv = crypto.getRandomValues(new Uint8Array(12)); // AES-GCM recommends a 12-byte IV
+        const key = await deriveKey(password);
+        const iv = getEncryptionConfig().iv;
         const data = encoder.encode(plaintext);
         const ciphertext = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, data);
 
-        // For simplicity, we can combine salt and ciphertext, or return salt separately.
-        // Here we return the ciphertext with the IV; the caller must know the salt.
-        // In a complete implementation, consider including the salt with the encrypted data.
-        return { data: ciphertext, iv, salt };
+        return {
+            data: ciphertext,
+        };
     }
 
     async decryptText(
         encryptedData: ArrayBuffer,
-        iv: Uint8Array,
-        salt: Uint8Array,
         password: string
     ): Promise<string> {
-        // In a full implementation, the salt should be extracted from the encrypted payload.
-        // For this example, assume a fixed salt or have it provided externally.
-        const key = await deriveKey(password, salt);
-
-        console.log("Decrypting with key:", key);
-        console.log("IV:", iv);
-        console.log("Encrypted data:", encryptedData);
-
+        const key = await deriveKey(password);
+        const iv = getEncryptionConfig().iv;
         const decrypted = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, encryptedData);
-        const decoder = new TextDecoder();
-        return decoder.decode(decrypted);
+        return new TextDecoder().decode(decrypted);
     }
 
     async encryptFile(fileBuffer: ArrayBuffer, password: string): Promise<EncryptionResult> {
-        // The process is analogous to text encryption.
-        const salt = crypto.getRandomValues(new Uint8Array(this.saltLength));
-        const key = await deriveKey(password, salt);
-        const iv = crypto.getRandomValues(new Uint8Array(12));
+        const key = await deriveKey(password);
+        const iv = getEncryptionConfig().iv;
         const ciphertext = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, fileBuffer);
-        return { data: ciphertext, iv, salt };
+
+        return {
+            data: ciphertext,
+        };
     }
 
     async decryptFile(
         encryptedBuffer: ArrayBuffer,
-        iv: Uint8Array,
-        salt: Uint8Array,
         password: string
     ): Promise<ArrayBuffer> {
-        const key = await deriveKey(password, salt);
+        const key = await deriveKey(password);
+        const iv = getEncryptionConfig().iv;
         return await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, encryptedBuffer);
     }
 }

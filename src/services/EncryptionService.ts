@@ -1,39 +1,21 @@
-import { IEncryptionAlgorithm, EncryptionResult } from "../encryption/IEncryptionAlgorithm";
+import { IEncryptionAlgorithm, EncryptionResult } from '../encryption/IEncryptionAlgorithm';
 
 export class EncryptionService {
-    private algorithm: IEncryptionAlgorithm;
+    constructor(private algorithm: IEncryptionAlgorithm) {}
 
-    constructor(algorithm: IEncryptionAlgorithm) {
-        this.algorithm = algorithm;
-    }
-
-    setAlgorithm(algorithm: IEncryptionAlgorithm) {
-        this.algorithm = algorithm;
-    }
-
-    encryptText(plaintext: string, password: string): Promise<EncryptionResult> {
+    async encryptText(plaintext: string, password: string): Promise<EncryptionResult> {
         return this.algorithm.encryptText(plaintext, password);
     }
 
-    decryptText(
-        encryptedData: ArrayBuffer,
-        iv: Uint8Array,
-        salt: Uint8Array,
-        password: string
-    ): Promise<string> {
-        return this.algorithm.decryptText(encryptedData, iv, salt, password);
+    async decryptText(encryptedData: ArrayBuffer, password: string): Promise<string> {
+        return this.algorithm.decryptText(encryptedData, password);
     }
 
-    encryptFile(fileBuffer: ArrayBuffer, password: string): Promise<EncryptionResult> {
+    async encryptFile(fileBuffer: ArrayBuffer, password: string): Promise<EncryptionResult> {
         return this.algorithm.encryptFile(fileBuffer, password);
     }
 
-    decryptFile(
-        encryptedBuffer: ArrayBuffer,
-        iv: Uint8Array,
-        salt: Uint8Array,
-        password: string
-    ): Promise<ArrayBuffer> {
-        return this.algorithm.decryptFile(encryptedBuffer, iv, salt, password);
+    async decryptFile(encryptedBuffer: ArrayBuffer, password: string): Promise<ArrayBuffer> {
+        return this.algorithm.decryptFile(encryptedBuffer, password);
     }
 }
