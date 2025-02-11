@@ -1,33 +1,38 @@
-import { IEncryptionAlgorithm, EncryptionResult } from './IEncryptionAlgorithm';
+import { IEncryptionAlgorithm, EncryptionResult, IEncryptionAlgorithmConfig } from './IEncryptionAlgorithm';
 
-interface EncryptionConfig {
-    salt: Uint8Array
-    iv: Uint8Array
-}
+const DEFAULT_SALT = new Uint8Array(16);
+DEFAULT_SALT.fill(0);
+const DEFAULT_IV = new Uint8Array(12);
+DEFAULT_IV.fill(0);
 
-const DEFAULT_SALT = new Uint8Array(16)
-DEFAULT_SALT.fill(0)
-const DEFAULT_IV = new Uint8Array(12)
-DEFAULT_IV.fill(0)
+export class AESGCMEncryptionConfig implements IEncryptionAlgorithmConfig {
+    password: string;
+    salt: Uint8Array;
+    iv: Uint8Array;
 
-export const getEncryptionConfig = (): EncryptionConfig => {
-    const envSalt = process.env.ECM_AESGCM_ENCRYPTION_SALT
-    const envIv = process.env.ECM_ENCRYPTION_IV
+    constructor(
+        password: string,
+        salt?: Uint8Array,
+        iv?: Uint8Array
+    ) {
+        this.salt = salt ??
+            (process.env.ECM_AESGCM_ENCRYPTION_SALT ?
+                new Uint8Array(Buffer.from(process.env.ECM_AESGCM_ENCRYPTION_SALT, 'base64')) :
+                DEFAULT_SALT
+            );
 
-    return {
-        salt: envSalt ?
-            new Uint8Array(Buffer.from(envSalt, 'base64')) :
-            DEFAULT_SALT
-        ,
-        iv: envIv ?
-            new Uint8Array(Buffer.from(envIv, 'base64')) :
-            DEFAULT_IV
+        this.iv = iv ??
+            (process.env.ECM_AESGCM_ENCRYPTION_IV ?
+                new Uint8Array(Buffer.from(process.env.ECM_AESGCM_ENCRYPTION_IV, 'base64')) :
+                DEFAULT_IV
+            );
+
+        this.password = password
     }
 }
 
-async function deriveKey(password: string): Promise<CryptoKey> {
+async function deriveKey(password: string, salt: Uint8Array): Promise<CryptoKey> {
     const encoder = new TextEncoder();
-    const { salt } = getEncryptionConfig();
 
     const keyMaterial = await crypto.subtle.importKey(
         "raw",
@@ -52,10 +57,10 @@ async function deriveKey(password: string): Promise<CryptoKey> {
 }
 
 export class AESGCMEncryption implements IEncryptionAlgorithm {
-    async encryptText(plaintext: string, password: string): Promise<EncryptionResult> {
+    async encryptText(plaintext: string, configuration: AESGCMEncryptionConfig): Promise<EncryptionResult> {
+        const { password, salt, iv } = configuration;
         const encoder = new TextEncoder();
-        const key = await deriveKey(password);
-        const iv = getEncryptionConfig().iv;
+        const key = await deriveKey(password, salt);
         const data = encoder.encode(plaintext);
         const ciphertext = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, data);
 
@@ -66,17 +71,17 @@ export class AESGCMEncryption implements IEncryptionAlgorithm {
 
     async decryptText(
         encryptedData: ArrayBuffer,
-        password: string
+        configuration: AESGCMEncryptionConfig
     ): Promise<string> {
-        const key = await deriveKey(password);
-        const iv = getEncryptionConfig().iv;
+        const { password, salt, iv } = configuration;
+        const key = await deriveKey(password, salt);
         const decrypted = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, encryptedData);
         return new TextDecoder().decode(decrypted);
     }
 
-    async encryptFile(fileBuffer: ArrayBuffer, password: string): Promise<EncryptionResult> {
-        const key = await deriveKey(password);
-        const iv = getEncryptionConfig().iv;
+    async encryptFile(fileBuffer: ArrayBuffer, configuration: AESGCMEncryptionConfig): Promise<EncryptionResult> {
+        const { password, salt, iv } = configuration;
+        const key = await deriveKey(password, salt);
         const ciphertext = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, fileBuffer);
 
         return {
@@ -86,10 +91,10 @@ export class AESGCMEncryption implements IEncryptionAlgorithm {
 
     async decryptFile(
         encryptedBuffer: ArrayBuffer,
-        password: string
+        configuration: AESGCMEncryptionConfig
     ): Promise<ArrayBuffer> {
-        const key = await deriveKey(password);
-        const iv = getEncryptionConfig().iv;
+        const { password, salt, iv } = configuration;
+        const key = await deriveKey(password, salt);
         return await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, encryptedBuffer);
     }
 }

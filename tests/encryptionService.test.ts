@@ -1,4 +1,4 @@
-import { AESGCMEncryption } from "../src/encryption/AESGCMEncryption";
+import { AESGCMEncryption, AESGCMEncryptionConfig } from "../src/encryption/AESGCMEncryption";
 import { EncryptionService } from "../src/services/EncryptionService";
 
 // Increase the default timeout in case encryption/decryption takes a bit longer
@@ -12,19 +12,17 @@ describe("EncryptionService using AESGCMEncryption", () => {
 
     beforeAll(() => {
         const aesEncryption = new AESGCMEncryption();
-        encryptionService = new EncryptionService(aesEncryption);
+        const aesEncryptionConfig = new AESGCMEncryptionConfig(password);
+        encryptionService = new EncryptionService(aesEncryption, aesEncryptionConfig);
     });
 
     it("should encrypt and decrypt text correctly", async () => {
         // Encrypt the plaintext
-        const encryptionResult = await encryptionService.encryptText(plaintext, password);
+        const encryptionResult = await encryptionService.encryptText(plaintext);
         expect(encryptionResult).toHaveProperty("data");
 
         // Decrypt the ciphertext
-        const decryptedText = await encryptionService.decryptText(
-            encryptionResult.data,
-            password
-        );
+        const decryptedText = await encryptionService.decryptText(encryptionResult.data);
 
         expect(decryptedText).toBe(plaintext);
     });
