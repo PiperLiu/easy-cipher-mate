@@ -1,8 +1,11 @@
 import { IEncryptionAlgorithm, EncryptionResult, IEncryptionAlgorithmConfig } from '../encryption/IEncryptionAlgorithm';
 import { readFileSync, writeFileSync } from 'fs';
 
-export class EncryptionService {
-    constructor(private algorithm: IEncryptionAlgorithm, private algorithmConfig: IEncryptionAlgorithmConfig) { }
+export class EncryptionService<
+    TAlgorithm extends IEncryptionAlgorithm<TConfig>,
+    TConfig extends IEncryptionAlgorithmConfig
+> {
+    constructor(private algorithm: TAlgorithm, private algorithmConfig: TConfig) { }
 
     async encryptText(plaintext: string): Promise<EncryptionResult> {
         return this.algorithm.encryptText(plaintext, this.algorithmConfig);

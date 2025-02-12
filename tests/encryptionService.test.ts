@@ -8,7 +8,7 @@ describe("EncryptionService using AESGCMEncryption", () => {
     const password = "test-password";
     const plaintext = "Hello, Unit Testing!";
 
-    let encryptionService: EncryptionService;
+    let encryptionService: EncryptionService<AESGCMEncryption, AESGCMEncryptionConfig>;
 
     beforeAll(() => {
         const aesEncryption = new AESGCMEncryption();

@@ -56,7 +56,7 @@ async function deriveKey(password: string, salt: Uint8Array): Promise<CryptoKey>
     );
 }
 
-export class AESGCMEncryption implements IEncryptionAlgorithm {
+export class AESGCMEncryption implements IEncryptionAlgorithm<AESGCMEncryptionConfig> {
     async encryptText(plaintext: string, configuration: AESGCMEncryptionConfig): Promise<EncryptionResult> {
         const { password, salt, iv } = configuration;
         const encoder = new TextEncoder();
