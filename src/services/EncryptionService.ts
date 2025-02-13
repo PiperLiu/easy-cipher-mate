@@ -1,9 +1,9 @@
-import { IEncryptionAlgorithm, EncryptionResult, IEncryptionAlgorithmConfig } from '../encryption/IEncryptionAlgorithm';
+import { IEncryptionAlgorithm, EncryptionResult, EncryptionConfigType } from '../encryption/IEncryptionAlgorithm';
 import { readFileSync, writeFileSync } from 'fs';
 
 export class EncryptionService<
-    TAlgorithm extends IEncryptionAlgorithm<TConfig>,
-    TConfig extends IEncryptionAlgorithmConfig
+    TAlgorithm extends IEncryptionAlgorithm<any>,
+    TConfig extends EncryptionConfigType<TAlgorithm>
 > {
     constructor(private algorithm: TAlgorithm, private algorithmConfig: TConfig) { }
 

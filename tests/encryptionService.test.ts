@@ -1,5 +1,4 @@
 import { AESGCMEncryption, AESGCMEncryptionConfigFromEnv } from "../src/encryption/AESGCMEncryption";
-import { IEncryptionAlgorithmConfig } from "../src/encryption/IEncryptionAlgorithm";
 import { EncryptionService } from "../src/services/EncryptionService";
 import { readFileSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';

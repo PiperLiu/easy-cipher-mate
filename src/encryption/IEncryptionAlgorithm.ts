@@ -32,3 +32,5 @@ export interface IEncryptionAlgorithm<T extends IEncryptionAlgorithmConfig> {
      * @param algorithmConfig The encryption algorithm configuration.
      */ decryptFile(encryptedBuffer: ArrayBuffer, algorithmConfig: T): Promise<ArrayBuffer>;
 }
+
+export type EncryptionConfigType<T> = T extends IEncryptionAlgorithm<infer C> ? C : never;
