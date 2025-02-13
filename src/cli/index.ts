@@ -1,7 +1,7 @@
 import { Command } from 'commander';
 import { readFileSync, writeFileSync } from 'fs';
 import { AESGCMEncryption } from '../encryption/AESGCMEncryption';
-import { AESGCMEncryptionConfig } from '../encryption/AESGCMEncryption';
+import { AESGCMEncryptionConfigFromEnv } from '../encryption/AESGCMEncryption';
 import { EncryptionService } from '../services/EncryptionService';
 
 const program = new Command();
@@ -20,7 +20,7 @@ program
     .action(async (options) => {
         try {
             const encryption = new AESGCMEncryption();
-            const config = new AESGCMEncryptionConfig(options.password);
+            const config = new AESGCMEncryptionConfigFromEnv(options.password);
             const service = new EncryptionService(encryption, config);
 
             const fileBuffer = readFileSync(options.input);
@@ -43,7 +43,7 @@ program
     .action(async (options) => {
         try {
             const encryption = new AESGCMEncryption();
-            const config = new AESGCMEncryptionConfig(options.password);
+            const config = new AESGCMEncryptionConfigFromEnv(options.password);
             const service = new EncryptionService(encryption, config);
 
             const encryptedData = readFileSync(options.input);

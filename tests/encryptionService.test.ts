@@ -1,4 +1,5 @@
-import { AESGCMEncryption, AESGCMEncryptionConfig } from "../src/encryption/AESGCMEncryption";
+import { AESGCMEncryption, AESGCMEncryptionConfigFromEnv } from "../src/encryption/AESGCMEncryption";
+import { IEncryptionAlgorithmConfig } from "../src/encryption/IEncryptionAlgorithm";
 import { EncryptionService } from "../src/services/EncryptionService";
 import { readFileSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
@@ -12,11 +13,11 @@ describe("EncryptionService using AESGCMEncryption", () => {
     const testFileName = "easy-cipher-mate-encryption-test.txt";
     const testFileContent = "Test file content for encryption.";
 
-    let encryptionService: EncryptionService<AESGCMEncryption, AESGCMEncryptionConfig>;
+    let encryptionService: EncryptionService<AESGCMEncryption, AESGCMEncryptionConfigFromEnv>;
 
     beforeAll(() => {
         const aesEncryption = new AESGCMEncryption();
-        const aesEncryptionConfig = new AESGCMEncryptionConfig(password);
+        const aesEncryptionConfig = new AESGCMEncryptionConfigFromEnv(password);
         encryptionService = new EncryptionService(aesEncryption, aesEncryptionConfig);
     });
 
