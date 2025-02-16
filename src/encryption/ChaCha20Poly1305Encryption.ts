@@ -1,5 +1,14 @@
-import { createCipheriv, createDecipheriv, pbkdf2Sync, CipherCCMTypes, CipherCCMOptions, DecipherCCM } from 'crypto';
+import { createCipheriv, createDecipheriv, pbkdf2Sync, CipherCCMTypes, CipherCCMOptions } from 'crypto';
+import { deriveStringToBuffer } from '../utils/stringCoding';
 import { IEncryptionAlgorithm, EncryptionResult, IEncryptionAlgorithmConfig } from './IEncryptionAlgorithm';
+
+const DEFAULT_TAG_LENGTH = 16;
+const DEFAULT_KEY_LENGTH = 32;
+const DEFAULT_ITERATIONS = 100000;
+const DEFAULT_NONCE_LENGTH = 12;
+
+const DEFAULT_SALT = deriveStringToBuffer('easy-cipher-mate', 16);
+const DEFAULT_NONCE = deriveStringToBuffer('easy-cipher-mate', DEFAULT_NONCE_LENGTH);
 
 export interface IChaCha20Poly1305EncryptionConfig extends IEncryptionAlgorithmConfig {
     password: string;
@@ -8,10 +17,10 @@ export interface IChaCha20Poly1305EncryptionConfig extends IEncryptionAlgorithmC
 }
 
 export class ChaCha20Poly1305Encryption implements IEncryptionAlgorithm<IChaCha20Poly1305EncryptionConfig> {
-    public static TAG_LENGTH = 16;
-    public static KEY_LENGTH = 32;
-    public static ITERATIONS = 100000;
-    public static NONCE_LENGTH = 12;
+    public static TAG_LENGTH = DEFAULT_TAG_LENGTH;
+    public static KEY_LENGTH = DEFAULT_KEY_LENGTH;
+    public static ITERATIONS = DEFAULT_ITERATIONS;
+    public static NONCE_LENGTH = DEFAULT_NONCE_LENGTH;
 
     async encryptText(plaintext: string, config: IChaCha20Poly1305EncryptionConfig): Promise<EncryptionResult> {
         const { password, salt, nonce } = config;
@@ -82,17 +91,24 @@ export class ChaCha20Poly1305EncryptionConfigFromEnv implements IChaCha20Poly130
     salt: Buffer;
     nonce: Buffer;
 
-    constructor(password?: string) {
+    constructor(
+        password?: string,
+        salt?: Buffer,
+        nonce?: Buffer
+    ) {
         this.password = password ?? '';
 
-        this.salt = Buffer.from(
-            process.env.ECM_CHACHA20_SALT || 'defaultsalt'.repeat(2),
-            'base64'
-        );
+        this.salt = salt ??
+            (process.env.ECM_CHACHA20_SALT ?
+                deriveStringToBuffer(process.env.ECM_CHACHA20_SALT, 16) :
+                DEFAULT_SALT
+            )
 
-        this.nonce = process.env.ECM_CHACHA20_NONCE ?
-            Buffer.from(process.env.ECM_CHACHA20_NONCE, 'base64') :
-            Buffer.alloc(ChaCha20Poly1305Encryption.NONCE_LENGTH);
+        this.nonce = nonce ??
+            (process.env.ECM_CHACHA20_NONCE ?
+                deriveStringToBuffer(process.env.ECM_CHACHA20_NONCE, ChaCha20Poly1305Encryption.NONCE_LENGTH) :
+                DEFAULT_NONCE
+            )
 
         if (this.nonce.length !== ChaCha20Poly1305Encryption.NONCE_LENGTH) {
             throw new Error('Nonce length in the environment variable is incorrect')

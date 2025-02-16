@@ -1,10 +1,9 @@
 import { readFileSync } from 'fs';
+import { deriveStringToUint8Array  } from '../utils/stringCoding';
 import { IEncryptionAlgorithm, EncryptionResult, IEncryptionAlgorithmConfig } from './IEncryptionAlgorithm';
 
-const DEFAULT_SALT = new Uint8Array(16);
-DEFAULT_SALT.fill(0);
-const DEFAULT_IV = new Uint8Array(12);
-DEFAULT_IV.fill(0);
+const DEFAULT_SALT = deriveStringToUint8Array('easy-cipher-mate', 16);
+const DEFAULT_IV = deriveStringToUint8Array('easy-cipher-mate', 12);
 
 export interface IAESGCMEncryptionConfig extends IEncryptionAlgorithmConfig {
     password: string;
@@ -69,13 +68,13 @@ export class AESGCMEncryptionConfigFromEnv implements IAESGCMEncryptionConfig {
 
         this.salt = salt ??
             (process.env.ECM_AESGCM_ENCRYPTION_SALT ?
-                new Uint8Array(Buffer.from(process.env.ECM_AESGCM_ENCRYPTION_SALT, 'base64')) :
+                deriveStringToUint8Array(process.env.ECM_AESGCM_ENCRYPTION_SALT, 16) :
                 DEFAULT_SALT
             );
 
         this.iv = iv ??
             (process.env.ECM_AESGCM_ENCRYPTION_IV ?
-                new Uint8Array(Buffer.from(process.env.ECM_AESGCM_ENCRYPTION_IV, 'base64')) :
+                deriveStringToUint8Array(process.env.ECM_AESGCM_ENCRYPTION_IV, 12) :
                 DEFAULT_IV
             );
     }
@@ -94,8 +93,8 @@ export class AESGCMEncryptionConfigFromJSON implements IAESGCMEncryptionConfig {
         }
     ) {
         this.password = json.password ?? '';
-        this.salt = json.salt ? new Uint8Array(Buffer.from(json.salt, 'base64')) : DEFAULT_SALT;
-        this.iv = json.iv ? new Uint8Array(Buffer.from(json.iv, 'base64')) : DEFAULT_IV;
+        this.salt = json.salt ? deriveStringToUint8Array(json.salt, 16) : DEFAULT_SALT;
+        this.iv = json.iv? deriveStringToUint8Array(json.iv, 12) : DEFAULT_IV;
     }
 }
 
@@ -109,8 +108,8 @@ export class AESGCMEncryptionConfigFromJSONFile implements IAESGCMEncryptionConf
     ) {
         const json = JSON.parse(readFileSync(filePath, 'utf-8'));
         this.password = json.password ?? '';
-        this.salt = json.salt ? new Uint8Array(Buffer.from(json.salt, 'base64')) : DEFAULT_SALT;
-        this.iv = json.iv ? new Uint8Array(Buffer.from(json.iv, 'base64')) : DEFAULT_IV;
+        this.salt = json.salt? deriveStringToUint8Array(json.salt, 16) : DEFAULT_SALT;
+        this.iv = json.iv? deriveStringToUint8Array(json.iv, 12) : DEFAULT_IV;
     }
 }
 
