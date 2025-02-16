@@ -80,4 +80,76 @@ const decryptCommand = program
         }
     });
 
+const encryptTextFileCommand = program
+    .command('encrypt-text-file')
+    .description('Encrypt a text file line by line')
+    .requiredOption('-f, --file <path>', 'Text file path')
+    .requiredOption('-p, --password <string>', 'Encryption password')
+    .option('-a, --algorithm <string>', 'Encryption algorithm (aes-gcm or chacha20-poly1305)', 'aes-gcm')
+    .action(async (options) => {
+        try {
+            const [encryption, configFactory] = createEncryption(options.algorithm);
+            const config = configFactory(options.password);
+            const service = new EncryptionService(encryption, config);
+
+            const content = readFileSync(options.file, 'utf-8');
+            const lines = content.split(/\r?\n/);
+            
+            const encryptedLines = await Promise.all(
+                lines.map(async line => {
+                    if (line.trim() === '') return line;
+                    const result = await service.encryptText(line);
+                    return Buffer.from(result.data).toString('base64');
+                })
+            );
+
+            writeFileSync(options.file, encryptedLines.join('\n'));
+            console.log(`File encrypted line by line successfully using ${options.algorithm}`);
+        } catch (error: unknown) {
+            console.error('Text file encryption failed:', error instanceof Error ? error.message : String(error));
+            process.exit(1);
+        }
+    });
+
+const decryptTextFileCommand = program
+    .command('decrypt-text-file')
+    .description('Decrypt a text file line by line')
+    .requiredOption('-f, --file <path>', 'Text file path')
+    .requiredOption('-p, --password <string>', 'Decryption password')
+    .option('-a, --algorithm <string>', 'Decryption algorithm (aes-gcm or chacha20-poly1305)', 'aes-gcm')
+    .action(async (options) => {
+        try {
+            const [encryption, configFactory] = createEncryption(options.algorithm);
+            const config = configFactory(options.password);
+            const service = new EncryptionService(encryption, config);
+
+            const content = readFileSync(options.file, 'utf-8');
+            const lines = content.split(/\r?\n/);
+            
+            const decryptedLines = await Promise.all(
+                lines.map(async (line, index) => {
+                    if (line.trim() === '') return line;
+                    
+                    try {
+                        const buffer = Buffer.from(line, 'base64');
+                        return await service.decryptText(buffer);
+                    } catch (e) {
+                        // If this is the first error we encounter, it might be due to wrong password
+                        if (index === lines.findIndex(l => l.trim() !== '')) {
+                            throw new Error('Invalid password');
+                        }
+                        // Otherwise, just return the original line
+                        return line;
+                    }
+                })
+            );
+
+            writeFileSync(options.file, decryptedLines.join('\n'));
+            console.log(`File decrypted line by line successfully using ${options.algorithm}`);
+        } catch (error: unknown) {
+            console.error('Text file decryption failed:', error instanceof Error ? error.message : String(error));
+            process.exit(1);
+        }
+    });
+
 program.parse(process.argv);
