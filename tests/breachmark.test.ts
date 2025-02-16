@@ -2,9 +2,8 @@ import { AESGCMEncryption, AESGCMEncryptionConfigFromEnv } from '../src/encrypti
 import { ChaCha20Poly1305Encryption, ChaCha20Poly1305EncryptionConfigFromEnv } from '../src/encryption/ChaCha20Poly1305Encryption';
 import { EncryptionService } from '../src/services/EncryptionService';
 
-// 假设密码、文本和加密服务已经在环境中配置好
 const password = "test-password";
-const plaintext = "This is a long string for benchmarking encryption performance.".repeat(100); // 长文本
+const plaintext = "This is a long string for benchmarking encryption performance.".repeat(100);
 const testFileContent = "This is a test file for benchmarking encryption performance.".repeat(100);
 
 describe('Encryption Algorithm Performance Benchmark', () => {
