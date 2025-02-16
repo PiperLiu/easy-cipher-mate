@@ -2,3 +2,4 @@ src/
 tests/
 jest.config.js
 tsconfig.json
+README-dev.md
