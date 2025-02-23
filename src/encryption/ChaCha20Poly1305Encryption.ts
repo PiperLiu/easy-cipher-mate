@@ -96,7 +96,7 @@ export class ChaCha20Poly1305EncryptionConfigFromEnv implements IChaCha20Poly130
         salt?: Buffer,
         nonce?: Buffer
     ) {
-        this.password = password ?? '';
+        this.password = password ?? process.env.ECM_CHACHA20_PASSWORD?? '';
 
         this.salt = salt ??
             (process.env.ECM_CHACHA20_SALT ?

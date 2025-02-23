@@ -64,17 +64,17 @@ export class AESGCMEncryptionConfigFromEnv implements IAESGCMEncryptionConfig {
         salt?: Uint8Array,
         iv?: Uint8Array
     ) {
-        this.password = password ?? process.env.ECM_AESGCM_ENCRYPTION_PASSWORD ?? '';
+        this.password = password ?? process.env.ECM_AESGCM_PASSWORD ?? '';
 
         this.salt = salt ??
-            (process.env.ECM_AESGCM_ENCRYPTION_SALT ?
-                deriveStringToUint8Array(process.env.ECM_AESGCM_ENCRYPTION_SALT, 16) :
+            (process.env.ECM_AESGCM_SALT ?
+                deriveStringToUint8Array(process.env.ECM_AESGCM_SALT, 16) :
                 DEFAULT_SALT
             );
 
         this.iv = iv ??
-            (process.env.ECM_AESGCM_ENCRYPTION_IV ?
-                deriveStringToUint8Array(process.env.ECM_AESGCM_ENCRYPTION_IV, 12) :
+            (process.env.ECM_AESGCM_IV ?
+                deriveStringToUint8Array(process.env.ECM_AESGCM_IV, 12) :
                 DEFAULT_IV
             );
     }
