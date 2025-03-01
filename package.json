@@ -1,6 +1,6 @@
 {
   "name": "easy-cipher-mate",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "main": "lib/index.js",
   "bin": {
     "easy-cipher-mate": "./lib/cli/index.js"
