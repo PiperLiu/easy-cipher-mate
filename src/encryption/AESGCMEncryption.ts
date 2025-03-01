@@ -1,5 +1,6 @@
 import { readFileSync } from 'fs';
-import { deriveStringToUint8Array  } from '../utils/stringCoding';
+import { deriveStringToUint8Array } from '../utils/stringCoding';
+import { encodeText, decodeText, TextEncoding } from '../utils/encodingUtils';
 import { IEncryptionAlgorithm, EncryptionResult, IEncryptionAlgorithmConfig } from './IEncryptionAlgorithm';
 
 const DEFAULT_SALT = deriveStringToUint8Array('easy-cipher-mate', 16);
@@ -9,14 +10,14 @@ export interface IAESGCMEncryptionConfig extends IEncryptionAlgorithmConfig {
     password: string;
     salt: Uint8Array;
     iv: Uint8Array;
+    textEncoding?: TextEncoding;
 }
 
 export class AESGCMEncryption implements IEncryptionAlgorithm<IAESGCMEncryptionConfig> {
     async encryptText(plaintext: string, configuration: IAESGCMEncryptionConfig): Promise<EncryptionResult> {
-        const { password, salt, iv } = configuration;
-        const encoder = new TextEncoder();
+        const { password, salt, iv, textEncoding = 'utf-8' } = configuration;
         const key = await deriveKey(password, salt);
-        const data = encoder.encode(plaintext);
+        const data = encodeText(plaintext, textEncoding);
         const ciphertext = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, data);
 
         return {
@@ -28,10 +29,10 @@ export class AESGCMEncryption implements IEncryptionAlgorithm<IAESGCMEncryptionC
         encryptedData: ArrayBuffer,
         configuration: IAESGCMEncryptionConfig
     ): Promise<string> {
-        const { password, salt, iv } = configuration;
+        const { password, salt, iv, textEncoding = 'utf-8' } = configuration;
         const key = await deriveKey(password, salt);
         const decrypted = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, encryptedData);
-        return new TextDecoder().decode(decrypted);
+        return decodeText(decrypted, textEncoding);
     }
 
     async encryptFile(fileBuffer: ArrayBuffer, configuration: IAESGCMEncryptionConfig): Promise<EncryptionResult> {
@@ -58,11 +59,13 @@ export class AESGCMEncryptionConfigFromEnv implements IAESGCMEncryptionConfig {
     password: string;
     salt: Uint8Array;
     iv: Uint8Array;
+    textEncoding?: TextEncoding;
 
     constructor(
         password?: string,
         salt?: Uint8Array,
-        iv?: Uint8Array
+        iv?: Uint8Array,
+        textEncoding?: TextEncoding
     ) {
         this.password = password ?? process.env.ECM_AESGCM_PASSWORD ?? '';
 
@@ -77,6 +80,10 @@ export class AESGCMEncryptionConfigFromEnv implements IAESGCMEncryptionConfig {
                 deriveStringToUint8Array(process.env.ECM_AESGCM_IV, 12) :
                 DEFAULT_IV
             );
+            
+        this.textEncoding = textEncoding ?? 
+            (process.env.ECM_TEXT_ENCODING as TextEncoding) ?? 
+            'utf-8';
     }
 }
 
@@ -84,17 +91,20 @@ export class AESGCMEncryptionConfigFromJSON implements IAESGCMEncryptionConfig {
     password: string;
     salt: Uint8Array;
     iv: Uint8Array;
+    textEncoding?: TextEncoding;
 
     constructor(
         json: {
             password?: string;
             salt?: string;
             iv?: string;
+            textEncoding?: TextEncoding;
         }
     ) {
         this.password = json.password ?? '';
         this.salt = json.salt ? deriveStringToUint8Array(json.salt, 16) : DEFAULT_SALT;
         this.iv = json.iv? deriveStringToUint8Array(json.iv, 12) : DEFAULT_IV;
+        this.textEncoding = json.textEncoding ?? 'utf-8';
     }
 }
 
@@ -102,6 +112,7 @@ export class AESGCMEncryptionConfigFromJSONFile implements IAESGCMEncryptionConf
     password: string;
     salt: Uint8Array;
     iv: Uint8Array;
+    textEncoding?: TextEncoding;
 
     constructor(
         filePath: string
@@ -110,6 +121,7 @@ export class AESGCMEncryptionConfigFromJSONFile implements IAESGCMEncryptionConf
         this.password = json.password ?? '';
         this.salt = json.salt? deriveStringToUint8Array(json.salt, 16) : DEFAULT_SALT;
         this.iv = json.iv? deriveStringToUint8Array(json.iv, 12) : DEFAULT_IV;
+        this.textEncoding = json.textEncoding ?? 'utf-8';
     }
 }
 

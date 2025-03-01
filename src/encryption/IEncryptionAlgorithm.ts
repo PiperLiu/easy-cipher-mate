@@ -1,8 +1,12 @@
+import { TextEncoding } from '../utils/encodingUtils';
+
 export interface EncryptionResult {
     data: ArrayBuffer; // the encrypted data
 }
 
-export interface IEncryptionAlgorithmConfig { }
+export interface IEncryptionAlgorithmConfig {
+    textEncoding?: TextEncoding;
+}
 
 export interface IEncryptionAlgorithm<T extends IEncryptionAlgorithmConfig> {
     /**
@@ -30,7 +34,8 @@ export interface IEncryptionAlgorithm<T extends IEncryptionAlgorithmConfig> {
      * Decrypt file data.
      * @param encryptedBuffer The ArrayBuffer of encrypted file data.
      * @param algorithmConfig The encryption algorithm configuration.
-     */ decryptFile(encryptedBuffer: ArrayBuffer, algorithmConfig: T): Promise<ArrayBuffer>;
+     */ 
+    decryptFile(encryptedBuffer: ArrayBuffer, algorithmConfig: T): Promise<ArrayBuffer>;
 }
 
 export type EncryptionConfigType<T> = T extends IEncryptionAlgorithm<infer C> ? C : never;

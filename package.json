@@ -19,7 +19,7 @@
     "security"
   ],
   "author": "Piper Liu",
-  "license": "ISC",
+  "license": "MIT",
   "description": "A CLI and programmatic file encryption/decryption tool supporting AES-GCM and ChaCha20-Poly1305 algorithms.",
   "devDependencies": {
     "@types/jest": "^29.5.14",
@@ -29,7 +29,8 @@
     "typescript": "^5.7.3"
   },
   "dependencies": {
-    "commander": "^13.1.0"
+    "commander": "^13.1.0",
+    "iconv-lite": "^0.6.3"
   },
   "homepage": "https://github.com/piperliu/easy-cipher-mate",
   "repository": {
