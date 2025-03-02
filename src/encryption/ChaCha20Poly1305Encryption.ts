@@ -24,12 +24,12 @@ export class ChaCha20Poly1305Encryption implements IEncryptionAlgorithm<IChaCha2
     public static ITERATIONS = DEFAULT_ITERATIONS;
     public static NONCE_LENGTH = DEFAULT_NONCE_LENGTH;
 
-    async encryptText(plaintext: string, config: IChaCha20Poly1305EncryptionConfig): Promise<EncryptionResult> {
+    async encryptText(plaintext: string, config: IChaCha20Poly1305EncryptionConfig, encoding?: TextEncoding): Promise<EncryptionResult> {
         const { password, salt, nonce, textEncoding = 'utf-8' } = config;
         this.validateNonce(nonce);
 
         const key = this.deriveKey(password, salt);
-        const textBuffer = encodeText(plaintext, textEncoding);
+        const textBuffer = encodeText(plaintext, encoding ?? textEncoding);
 
         const cipher = createCipheriv('chacha20-poly1305', key, nonce, {
             authTagLength: ChaCha20Poly1305Encryption.TAG_LENGTH,
@@ -49,7 +49,7 @@ export class ChaCha20Poly1305Encryption implements IEncryptionAlgorithm<IChaCha2
         return { data: finalBuffer.buffer.slice(finalBuffer.byteOffset, finalBuffer.byteOffset + finalBuffer.byteLength) };
     }
 
-    async decryptText(encryptedData: ArrayBuffer, config: IChaCha20Poly1305EncryptionConfig): Promise<string> {
+    async decryptText(encryptedData: ArrayBuffer, config: IChaCha20Poly1305EncryptionConfig, encoding?: TextEncoding): Promise<string> {
         const { password, salt, nonce, textEncoding = 'utf-8' } = config;
         this.validateNonce(nonce);
 
@@ -70,7 +70,7 @@ export class ChaCha20Poly1305Encryption implements IEncryptionAlgorithm<IChaCha2
         ]);
 
         return decodeText(
-            decrypted.buffer.slice(decrypted.byteOffset, decrypted.byteOffset + decrypted.byteLength), textEncoding);
+            decrypted.buffer.slice(decrypted.byteOffset, decrypted.byteOffset + decrypted.byteLength), encoding ?? textEncoding);
     }
 
     async encryptFile(fileBuffer: ArrayBuffer, config: IChaCha20Poly1305EncryptionConfig): Promise<EncryptionResult> {

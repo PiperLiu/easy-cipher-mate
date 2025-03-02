@@ -14,10 +14,10 @@ export interface IAESGCMEncryptionConfig extends IEncryptionAlgorithmConfig {
 }
 
 export class AESGCMEncryption implements IEncryptionAlgorithm<IAESGCMEncryptionConfig> {
-    async encryptText(plaintext: string, configuration: IAESGCMEncryptionConfig): Promise<EncryptionResult> {
+    async encryptText(plaintext: string, configuration: IAESGCMEncryptionConfig, encoding?: TextEncoding): Promise<EncryptionResult> {
         const { password, salt, iv, textEncoding = 'utf-8' } = configuration;
         const key = await deriveKey(password, salt);
-        const data = encodeText(plaintext, textEncoding);
+        const data = encodeText(plaintext, encoding ?? textEncoding);
         const ciphertext = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, data);
 
         return {
@@ -27,12 +27,13 @@ export class AESGCMEncryption implements IEncryptionAlgorithm<IAESGCMEncryptionC
 
     async decryptText(
         encryptedData: ArrayBuffer,
-        configuration: IAESGCMEncryptionConfig
+        configuration: IAESGCMEncryptionConfig,
+        encoding?: TextEncoding
     ): Promise<string> {
         const { password, salt, iv, textEncoding = 'utf-8' } = configuration;
         const key = await deriveKey(password, salt);
         const decrypted = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, encryptedData);
-        return decodeText(decrypted, textEncoding);
+        return decodeText(decrypted, encoding?? textEncoding);
     }
 
     async encryptFile(fileBuffer: ArrayBuffer, configuration: IAESGCMEncryptionConfig): Promise<EncryptionResult> {
