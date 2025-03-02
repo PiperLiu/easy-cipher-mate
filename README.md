@@ -121,6 +121,10 @@ class MyConfig implements IChaCha20Poly1305EncryptionConfig {
 
 ### Working with Different Text Encodings
 
+There are two ways to specify the text encoding:
+
+#### 1. In the Configuration Object
+
 ```typescript
 import { 
   AESGCMEncryption, 
@@ -132,15 +136,74 @@ const encryption = new AESGCMEncryption();
 // Configure with specific text encoding
 const config = new AESGCMEncryptionConfigFromJSON({
   password: 'my-password',
-  textEncoding: 'base64' // Use base64 encoding for text
+  textEncoding: 'base64' // Set base64 as default encoding for all operations
 });
 
-// Encrypt text with base64 encoding
+// Encrypt text with base64 encoding (from config)
 const encryptedResult = await encryption.encryptText('Secret message', config);
 
-// Decrypt - make sure to use the same encoding
+// Decrypt - will use the same encoding from config
 const decryptedText = await encryption.decryptText(encryptedResult.data, config);
 console.log(decryptedText); // 'Secret message'
+```
+
+#### 2. As a Parameter in Method Calls
+
+You can override the encoding set in the configuration by passing an explicit encoding parameter:
+
+```typescript
+import { 
+  AESGCMEncryption, 
+  AESGCMEncryptionConfigFromJSON 
+} from 'easy-cipher-mate';
+
+const encryption = new AESGCMEncryption();
+const config = new AESGCMEncryptionConfigFromJSON({
+  password: 'my-password',
+  textEncoding: 'utf-8' // Default is utf-8
+});
+
+// Encrypt with hex encoding (overrides the utf-8 from config)
+const encryptedResult = await encryption.encryptText('Secret message', config, 'hex');
+
+// Decrypt with hex encoding (must match the encoding used for encryption)
+const decryptedText = await encryption.decryptText(encryptedResult.data, config, 'hex');
+console.log(decryptedText); // 'Secret message'
+
+// You can mix and match encodings as needed
+const textInBase64 = await encryption.encryptText('Another message', config, 'base64');
+const decryptedBase64 = await encryption.decryptText(textInBase64.data, config, 'base64');
+
+// The encoding parameter works with the service wrapper too
+const service = new EncryptionService(encryption, config);
+const encrypted = await service.encryptText('Hello world', 'latin1');
+const decrypted = await service.decryptText(encrypted.data, 'latin1');
+```
+
+### Working with Different Languages
+
+```typescript
+import { 
+  AESGCMEncryption, 
+  AESGCMEncryptionConfigFromJSON 
+} from 'easy-cipher-mate';
+
+const encryption = new AESGCMEncryption();
+const config = new AESGCMEncryptionConfigFromJSON({
+  password: 'my-password'
+});
+
+// Encrypt Chinese text
+const chineseText = '你好，世界';
+const encryptedChinese = await encryption.encryptText(chineseText, config);
+const decryptedChinese = await encryption.decryptText(encryptedChinese.data, config);
+console.log(decryptedChinese === chineseText); // true
+
+// Encrypt Japanese text with explicit UTF-16LE encoding
+const japaneseText = 'こんにちは世界';
+const encryptedJapanese = await encryption.encryptText(japaneseText, config, 'utf16le');
+const decryptedJapanese = await encryption.decryptText(encryptedJapanese.data, config, 'utf16le');
+console.log(decryptedJapanese === japaneseText); // true
 ```
 
 ### File Encryption
@@ -156,17 +219,62 @@ const config = new AESGCMEncryptionConfigFromJSON({
 
 // Read file
 const fileBuffer = readFileSync('document.pdf');
+const arrayBuffer = fileBuffer.buffer.slice(fileBuffer.byteOffset, fileBuffer.byteOffset + fileBuffer.byteLength);
 
 // Encrypt file
-const encryptedResult = await encryption.encryptFile(fileBuffer, config);
+const encryptedResult = await encryption.encryptFile(arrayBuffer, config);
 
 // Save encrypted file
 writeFileSync('document.pdf.encrypted', Buffer.from(encryptedResult.data));
 
 // Later, to decrypt:
 const encryptedFileBuffer = readFileSync('document.pdf.encrypted');
-const decryptedBuffer = await encryption.decryptFile(encryptedFileBuffer, config);
+const encryptedArrayBuffer = encryptedFileBuffer.buffer.slice(
+  encryptedFileBuffer.byteOffset, 
+  encryptedFileBuffer.byteOffset + encryptedFileBuffer.byteLength
+);
+const decryptedBuffer = await encryption.decryptFile(encryptedArrayBuffer, config);
 writeFileSync('document.pdf.decrypted', Buffer.from(decryptedBuffer));
+
+// You can also use the EncryptionService for simpler file operations
+const service = new EncryptionService(encryption, config);
+await service.encryptFileByName('document.pdf');
+await service.decryptFileByName(encryptedResult, 'document.pdf.decrypted');
+```
+
+## API Reference
+
+### Encryption Algorithms
+
+#### AESGCMEncryption
+
+```typescript
+encryptText(plaintext: string, config: IAESGCMEncryptionConfig, encoding?: TextEncoding): Promise<EncryptionResult>
+decryptText(encryptedData: ArrayBuffer, config: IAESGCMEncryptionConfig, encoding?: TextEncoding): Promise<string>
+encryptFile(fileBuffer: ArrayBuffer, config: IAESGCMEncryptionConfig, encoding?: TextEncoding): Promise<EncryptionResult>
+decryptFile(encryptedBuffer: ArrayBuffer, config: IAESGCMEncryptionConfig, encoding?: TextEncoding): Promise<ArrayBuffer>
+```
+
+#### ChaCha20Poly1305Encryption
+
+```typescript
+encryptText(plaintext: string, config: IChaCha20Poly1305EncryptionConfig, encoding?: TextEncoding): Promise<EncryptionResult>
+decryptText(encryptedData: ArrayBuffer, config: IChaCha20Poly1305EncryptionConfig, encoding?: TextEncoding): Promise<string>
+encryptFile(fileBuffer: ArrayBuffer, config: IChaCha20Poly1305EncryptionConfig, encoding?: TextEncoding): Promise<EncryptionResult>
+decryptFile(encryptedBuffer: ArrayBuffer, config: IChaCha20Poly1305EncryptionConfig, encoding?: TextEncoding): Promise<ArrayBuffer>
+```
+
+### EncryptionService
+
+A wrapper class that simplifies encryption operations:
+
+```typescript
+encryptText(plaintext: string, encoding?: TextEncoding): Promise<EncryptionResult>
+decryptText(encryptedData: ArrayBuffer, encoding?: TextEncoding): Promise<string>
+encryptFile(fileBuffer: ArrayBuffer, encoding?: TextEncoding): Promise<EncryptionResult>
+decryptFile(encryptedBuffer: ArrayBuffer, encoding?: TextEncoding): Promise<ArrayBuffer>
+encryptFileByName(fileName: string, encoding?: TextEncoding): Promise<EncryptionResult>
+decryptFileByName(encryptedResult: EncryptionResult, fileName: string, encoding?: TextEncoding): Promise<void>
 ```
 
 ## Supported Encodings
@@ -189,6 +297,11 @@ You can configure the encryption using environment variables:
 - `ECM_AESGCM_PASSWORD`: The encryption password
 - `ECM_AESGCM_SALT`: The salt used for key derivation (optional, base64 encoded)
 - `ECM_AESGCM_IV`: The initialization vector (optional, base64 encoded)
+- `ECM_CHACHA20_PASSWORD`: The encryption password for ChaCha20-Poly1305
+- `ECM_CHACHA20_SALT`: The salt used for key derivation (optional, base64 encoded)
+- `ECM_CHACHA20_NONCE`: The nonce (optional, base64 encoded)
+
+For both algorithms:
 - `ECM_TEXT_ENCODING`: The text encoding to use (optional, defaults to 'utf-8')
 
 ### Configuration via JSON

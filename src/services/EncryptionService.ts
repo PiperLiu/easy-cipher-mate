@@ -1,5 +1,6 @@
 import { IEncryptionAlgorithm, EncryptionResult, EncryptionConfigType } from '../encryption/IEncryptionAlgorithm';
 import { readFileSync, writeFileSync } from 'fs';
+import { TextEncoding } from '../utils/encodingUtils';
 
 export class EncryptionService<
     TAlgorithm extends IEncryptionAlgorithm<any>,
@@ -7,20 +8,20 @@ export class EncryptionService<
 > {
     constructor(private algorithm: TAlgorithm, private algorithmConfig: TConfig) { }
 
-    async encryptText(plaintext: string): Promise<EncryptionResult> {
-        return this.algorithm.encryptText(plaintext, this.algorithmConfig);
+    async encryptText(plaintext: string, encoding?: TextEncoding): Promise<EncryptionResult> {
+        return this.algorithm.encryptText(plaintext, this.algorithmConfig, encoding);
     }
 
-    async decryptText(encryptedData: ArrayBuffer): Promise<string> {
-        return this.algorithm.decryptText(encryptedData, this.algorithmConfig);
+    async decryptText(encryptedData: ArrayBuffer, encoding?: TextEncoding): Promise<string> {
+        return this.algorithm.decryptText(encryptedData, this.algorithmConfig, encoding);
     }
 
-    async encryptFile(fileBuffer: ArrayBuffer): Promise<EncryptionResult> {
-        return this.algorithm.encryptFile(fileBuffer, this.algorithmConfig);
+    async encryptFile(fileBuffer: ArrayBuffer, encoding?: TextEncoding): Promise<EncryptionResult> {
+        return this.algorithm.encryptFile(fileBuffer, this.algorithmConfig, encoding);
     }
 
-    async decryptFile(encryptedBuffer: ArrayBuffer): Promise<ArrayBuffer> {
-        return this.algorithm.decryptFile(encryptedBuffer, this.algorithmConfig);
+    async decryptFile(encryptedBuffer: ArrayBuffer, encoding?: TextEncoding): Promise<ArrayBuffer> {
+        return this.algorithm.decryptFile(encryptedBuffer, this.algorithmConfig, encoding);
     }
 
     async encryptFileByName(fileName: string): Promise<EncryptionResult> {
