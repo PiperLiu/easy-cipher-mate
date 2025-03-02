@@ -10,7 +10,11 @@ export type TextEncoding = 'utf-8' | 'ascii' | 'utf16le' | 'base64' | 'hex' | 'l
  */
 export function encodeText(text: string, encoding: TextEncoding = 'utf-8'): ArrayBuffer {
   if (encoding === 'base64' || encoding === 'hex') {
-    return Buffer.from(text).toString(encoding) as any;
+    // First encode to the specified format, then create a buffer from that encoded string
+    const encodedString = Buffer.from(text).toString(encoding);
+    // Convert the encoded string back to a buffer and extract its ArrayBuffer
+    const buffer = Buffer.from(encodedString);
+    return buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength);
   }
 
   const buffer = iconv.encode(text, encoding);
