@@ -12,15 +12,23 @@
   },
   "keywords": [
     "encryption",
+    "decryption",
     "cli",
     "nodejs",
     "aes",
+    "aes-gcm",
     "chacha20",
-    "security"
+    "chacha20-poly1305",
+    "security",
+    "file-encryption",
+    "text-encryption",
+    "line-by-line",
+    "text-encoding",
+    "crypto"
   ],
   "author": "Piper Liu",
   "license": "MIT",
-  "description": "A CLI and programmatic file encryption/decryption tool supporting AES-GCM and ChaCha20-Poly1305 algorithms.",
+  "description": "A CLI and programmatic tool for encryption/decryption supporting AES-GCM and ChaCha20-Poly1305 algorithms, with text encoding options and line-by-line text file processing.",
   "devDependencies": {
     "@types/jest": "^29.5.14",
     "@types/node": "^22.13.1",

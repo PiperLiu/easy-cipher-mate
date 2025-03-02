@@ -1,6 +1,6 @@
 # easy-cipher-mate
 
-A library providing easy-to-use encryption capabilities for Node.js and browser environments.
+A library and CLI tool providing easy-to-use encryption capabilities for Node.js and browser environments.
 
 ## Features
 
@@ -9,6 +9,7 @@ A library providing easy-to-use encryption capabilities for Node.js and browser 
   - ChaCha20-Poly1305 for high-performance encryption
 - Text encoding options for multi-language support
 - File encryption capabilities
+- Line-by-line text file encryption
 - Environment variable configuration
 - Simple API for encryption and decryption
 
@@ -31,20 +32,44 @@ yarn add easy-cipher-mate
 easy-cipher-mate encrypt-file -i input.txt -o output.txt -p yourpassword -a aes-gcm
 ```
 
+Options:
+- `-i, --input <path>`: Input file path (required)
+- `-o, --output <path>`: Output file path (required)
+- `-p, --password <string>`: Encryption password (required)
+- `-a, --algorithm <string>`: Encryption algorithm - either 'aes-gcm' (default) or 'chacha20-poly1305'
+
 ### Decrypt a file
 ```bash
 easy-cipher-mate decrypt-file -i encrypted.txt -o decrypted.txt -p yourpassword -a aes-gcm
 ```
 
+Options:
+- `-i, --input <path>`: Input file path (required)
+- `-o, --output <path>`: Output file path (required)
+- `-p, --password <string>`: Decryption password (required)
+- `-a, --algorithm <string>`: Decryption algorithm - either 'aes-gcm' (default) or 'chacha20-poly1305'
+
 ### Encrypt a text file line by line
 ```bash
-easy-cipher-mate encrypt-text-file -f input.txt -p yourpassword -a aes-gcm
+easy-cipher-mate encrypt-text-file -f input.txt -p yourpassword -a aes-gcm -e utf-8
 ```
+
+Options:
+- `-f, --file <path>`: Text file path (required)
+- `-p, --password <string>`: Encryption password (required)
+- `-a, --algorithm <string>`: Encryption algorithm - either 'aes-gcm' (default) or 'chacha20-poly1305'
+- `-e, --encoding <string>`: Text encoding - 'utf-8' (default), 'ascii', 'utf16le', 'base64', 'hex', 'latin1', or 'binary'
 
 ### Decrypt a text file line by line
 ```bash
-easy-cipher-mate decrypt-text-file -f encrypted.txt -p yourpassword -a aes-gcm
+easy-cipher-mate decrypt-text-file -f encrypted.txt -p yourpassword -a aes-gcm -e utf-8
 ```
+
+Options:
+- `-f, --file <path>`: Text file path (required)
+- `-p, --password <string>`: Decryption password (required)
+- `-a, --algorithm <string>`: Decryption algorithm - either 'aes-gcm' (default) or 'chacha20-poly1305'
+- `-e, --encoding <string>`: Text encoding - 'utf-8' (default), 'ascii', 'utf16le', 'base64', 'hex', 'latin1', or 'binary'
 
 ## Programmatic Usage
 
@@ -240,6 +265,55 @@ writeFileSync('document.pdf.decrypted', Buffer.from(decryptedBuffer));
 const service = new EncryptionService(encryption, config);
 await service.encryptFileByName('document.pdf');
 await service.decryptFileByName(encryptedResult, 'document.pdf.decrypted');
+```
+
+## Line-by-Line Text File Encryption
+
+In addition to encrypting entire files, easy-cipher-mate allows you to encrypt/decrypt text files line by line:
+
+```typescript
+import { AESGCMEncryption, AESGCMEncryptionConfigFromJSON, EncryptionService } from 'easy-cipher-mate';
+import { readFileSync, writeFileSync } from 'fs';
+
+const encryption = new AESGCMEncryption();
+const config = new AESGCMEncryptionConfigFromJSON({
+  password: 'my-password'
+});
+
+const service = new EncryptionService(encryption, config);
+const filePath = 'document.txt';
+
+// Read the file and split into lines
+const content = readFileSync(filePath, 'utf-8');
+const lines = content.split(/\r?\n/);
+
+// Encrypt each non-empty line
+const encryptedLines = await Promise.all(
+  lines.map(async line => {
+    if (line.trim() === '') return line;
+    const result = await service.encryptText(line);
+    return Buffer.from(result.data).toString('base64');
+  })
+);
+
+// Save the encrypted content
+writeFileSync(`${filePath}.encrypted`, encryptedLines.join('\n'));
+
+// Later, to decrypt:
+const encryptedContent = readFileSync(`${filePath}.encrypted`, 'utf-8');
+const encryptedLines2 = encryptedContent.split(/\r?\n/);
+
+// Decrypt each line
+const decryptedLines = await Promise.all(
+  encryptedLines2.map(async line => {
+    if (line.trim() === '') return line;
+    const buffer = Buffer.from(line, 'base64');
+    return await service.decryptText(buffer);
+  })
+);
+
+// Save the decrypted content
+writeFileSync(`${filePath}.decrypted`, decryptedLines.join('\n'));
 ```
 
 ## API Reference
